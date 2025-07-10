@@ -10,7 +10,31 @@ const path = require('path');
 // Create application/x-www-form-urlencoded parser
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
 
+// API Key middleware
+const apiKeyMiddleware = (req, res, next) => {
+	// Skip API key check for /hello route
+	if (req.path === '/hello') {
+		return next();
+	}
+
+	const apiKey = req.headers['x-api-key'] || req.headers['authorization'];
+	const expectedApiKey = process.env.API_KEY;
+
+	if (!apiKey || apiKey !== expectedApiKey) {
+		return res.status(401).json({ error: 'Unauthorized: Invalid or missing API key' });
+	}
+
+	next();
+};
+
 app.use(express.static('public'));
+
+// Apply API key middleware to all routes
+app.use(apiKeyMiddleware);
+
+app.get('/hello', function (req, res) {
+	res.send('Hello Universe From the Restaurant API...!!');
+});
 
 app.get('/', function (req, res) {
 	res.sendFile(path.join(__dirname, '..', 'components', 'home.htm'));
